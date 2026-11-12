@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "snapshot": "texlive-2026-03-02+support-2026-11-03",
+  "sourceArchiveSha256": "4f63731fe4ec9238d877846074ab424350add6f6e956944def389e6752d2c78b",
+  "sourceDataBytes": 341568560,
+  "uncompressedBytes": 74311252,
+  "fileCount": 3566,
+  "recipeSha256": "373e7c481361b5a47e525e9cf36684489b6ad3fa3a142ce8f2d99f3125566f52",
+  "generatorSha256": "3b732115c46db7055179ac48dc424c96b4de6b21534ca5417396db002636998c",
+  "catalogSha256": "b546ba979ecc420943ffdbcce1bc82fdfb14d407862f392edb02809a8e020e2c",
+  "components": {
+    "path": "lualatex-components.70a885c43f5b96fa021304a4abf4d8f2954f40eadf709f15febed28c7dc85edc.json",
+    "size": 1453187,
+    "sha256": "70a885c43f5b96fa021304a4abf4d8f2954f40eadf709f15febed28c7dc85edc"
+  },
+  "metadata": {
+    "path": "tex-catalog.983adf0c88120921484651496475fd29e5c1dd2af628896828d2fd373dfbfe36.json",
+    "size": 112442,
+    "sha256": "983adf0c88120921484651496475fd29e5c1dd2af628896828d2fd373dfbfe36"
+  },
+  "data": {
+    "path": "texlive-lualatex.9c92ea102944673398013eec0d0370803f497f6e44667c5c3539ca87ddf597a6.data",
+    "size": 45641875,
+    "sha256": "9c92ea102944673398013eec0d0370803f497f6e44667c5c3539ca87ddf597a6"
+  },
+  "loader": {
+    "path": "texlive-lualatex.16c5e279ee29593c2f09455e82a3bdc701651d52472631ebce5bffc7d086c2d3.js",
+    "size": 941021,
+    "sha256": "16c5e279ee29593c2f09455e82a3bdc701651d52472631ebce5bffc7d086c2d3"
+  },
+  "files": {
+    "path": "lualatex-files.e436bf904d94cfd086ed8597a7f3a4ba8b97879f2b12dd435e1d0a87fa238d83.json",
+    "size": 567776,
+    "sha256": "e436bf904d94cfd086ed8597a7f3a4ba8b97879f2b12dd435e1d0a87fa238d83"
+  },
+  "notices": [
+    {
+      "path": "LICENSE.TL",
+      "size": 5129,
+      "sha256": "8147ff504e6d7d89a7c42d5c3dfbaa8705ad17f72c82a5c1bce5f4f0ee8b2fb7"
+    },
+    {
+      "path": "LICENSE.CTAN",
+      "size": 2098,
+      "sha256": "380d83c62ec2ae91617b42739699676f23446039f2f88fa092da47e0c49f1eae"
+    },
+    {
+      "path": "release-texlive.txt",
+      "size": 350,
+      "sha256": "050b3b4866a2e72b927cd7d749998a378956032e899687467e2e7a522455444f"
+    }
+  ],
+  "compatibility": {
+    "version": 1,
+    "sourceArchiveSha256": "4f63731fe4ec9238d877846074ab424350add6f6e956944def389e6752d2c78b",
+    "engine": "lualatex",
+    "implementation": "LuaHBTeX",
+    "implementationVersion": "1.24.0",
+    "binary": {
+      "path": "busytex.wasm",
+      "size": 32507525,
+      "sha256": "8d1988fc58cd1611c3cbd6bd986c3e607e5ff44f1d94252207ff7aae4cee72e0"
+    },
+    "format": {
+      "name": "luahblatex",
+      "path": "/texlive/texmf-dist/texmf-var/web2c/luahbtex/luahblatex.fmt",
+      "size": 5654663,
+      "sha256": "44f9a49a6443c582739a981340d4d2d9981a412a01ae1b0aeba36c3ada8e7ead"
+    },
+    "packagePolicy": "release-pinned",
+    "formatRebuilding": false,
+    "shellEscape": false
+  }
+}

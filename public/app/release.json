@@ -1,8 +1,8 @@
 {
   "version": "0.1.0",
-  "revision": "d70d965df99aa813f61e15650f6ca4760ba634b8",
-  "pipeline": "https://github.com/Scribyra/scribyra/actions/runs/43252153150",
-  "release": "dev-1002-d70d965d",
-  "builtAt": "2026-11-12T16:07:37.402Z",
+  "revision": "0c5ffec5d235053c6d751cbf4e0509a08c6269be",
+  "pipeline": "https://github.com/Scribyra/scribyra/actions/runs/43278728465",
+  "release": "dev-1003-0c5ffec5",
+  "builtAt": "2026-11-12T18:30:47.286Z",
   "appUrl": "https://dev.scribyra.com/"
 }

@@ -247,8 +247,8 @@ globalThis.createScribyraDownloads = function(policy,observer){
 
 const downloads=globalThis.createScribyraDownloads({"defaults":{"version":1,"archiveBytes":134217728,"metadataBytes":33554432,"runtimeBytes":268435456,"partialBytes":134217728},"maximum":{"version":1,"archiveBytes":2147483648,"metadataBytes":268435456,"runtimeBytes":2147483648,"partialBytes":536870912},"mib":1048576}
 );
-const CACHE='scribyra-shell-313202af404c';
-const PRECACHE=["/app/","/app/index.html","/app/agent.md","/app/assets/pdf.worker.min-CHFwMXne.mjs","/app/assets/cursor-editorTextHighlight-kG3uUOwL.svg","/app/assets/scribyra_app_bg-DuGCC315.wasm","/app/assets/index-BMq0chqG.css","/app/assets/comments-BlMehZhV.css","/app/assets/index-mrFyl4MF.js","/app/assets/index-B4mo8Wq-.js","/app/assets/workspace-worker-DB-w41Jr.js","/app/assets/tex-packages-worker-BZ_T7Qsg.js"];
+const CACHE='scribyra-shell-5b592fc0aa3b';
+const PRECACHE=["/app/","/app/index.html","/app/agent.md","/app/assets/pdf.worker.min-CHFwMXne.mjs","/app/assets/cursor-editorTextHighlight-kG3uUOwL.svg","/app/assets/scribyra_app_bg-wjskFcyn.wasm","/app/assets/index-vLW16AJE.css","/app/assets/comments-BlMehZhV.css","/app/assets/index-F9QhfSg9.js","/app/assets/index-B4mo8Wq-.js","/app/assets/workspace-worker-Bqu1ba5m.js","/app/assets/tex-packages-worker-DoJsJr0Q.js"];
 const SHELL="/app/";
 const ENGINE='scribyra-tex-v1.4.1';
 const VERIFIED='scribyra-runtime-verified-v1';

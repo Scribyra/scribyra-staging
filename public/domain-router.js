@@ -1,5 +1,5 @@
 // Host selects a static shell; GitLab Pages still enforces access control.
-const app={"host":"dev.scribyra.com","presentationHost":"scribyra-staging-1301bb.gitlab.io","url":"https://dev.scribyra.com/","legacy":"https://dev.scribyra.com/app/","module":"/assets/index-BYMh0KEY.js","styles":["/assets/index-DIyHCc1T.css"],"body":"","title":"Scribyra — Your ideas, beautifully written"};
+const app={"host":"dev.scribyra.com","presentationHost":"scribyra-staging-1301bb.gitlab.io","url":"https://dev.scribyra.com/","legacy":"https://dev.scribyra.com/app/","module":"/assets/index-rtjNxJFD.js","styles":["/assets/index-DIyHCc1T.css"],"body":"","title":"Scribyra — Your ideas, beautifully written"};
 if(location.hostname===app.host){
  document.title=app.title;
  const recipe=document.createElement('link');recipe.rel='alternate';recipe.type='text/markdown';recipe.href='agent.md';document.head.append(recipe);

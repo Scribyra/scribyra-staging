@@ -73,6 +73,126 @@ function scribyraInstallTex(Module, name, contents) {
     Module.FS.writeFile(path, contents); Module.scribyraPackageBytes = total;
   }
 }
+async function scribyraTexPasses(ctx) {
+  const {FS, run, print} = ctx;
+  const OUTPUT = /\.(log|pdf|xdv|dvi|synctex|synctex\.gz|blg|ilg|fls|fdb_latexmk)$/i;
+  const AUX = /\.(aux|toc|lof|lot|loa|lol|out|bbl|bcf|run\.xml|nav|snm|vrb|idx|ind|ilg|glo|gls|glg|ist|thm|brf|cpt|mtc\d*|maf|ptc|stc\d*|xref|loe|lox)$/i;
+  // Written for other programs (Biber, makeindex, latexmk's request list), never a reason to
+  // run TeX again by themselves: their tools run when they change, and those tools' output counts.
+  const TOOL = /\.(bcf|run\.xml|idx|glo|ist)$/i;
+  const exists = path => FS.analyzePath(path).exists;
+  const text = path => { try { return FS.readFile(path, { encoding: 'utf8' }); } catch { return null; } };
+  // Generated files under the project: everything TeX or a helper may have written.
+  function snapshot() {
+    const files = new Map();
+    (function walk(dir) {
+      for (const name of FS.readdir(dir)) {
+        if (name === '.' || name === '..') continue;
+        const path = dir + '/' + name, stat = FS.stat(path);
+        if (FS.isDir(stat.mode)) { walk(path); continue; }
+        if (OUTPUT.test(name) || (ctx.inputs.has(path) && !AUX.test(name))) continue;
+        files.set(path, stat.size > 16 * 1048576 ? `size:${stat.size}` : text(path));
+      }
+    })(ctx.projectDir);
+    return files;
+  }
+  const base = path => path.slice(path.lastIndexOf('/') + 1);
+  // Which changed files matter for the next TeX pass.
+  // A file that did not exist counts when TeX looked for it: the engine's missing-file report, or
+  // LaTeX's "No file main.toc." in the log. Bibliography and index output always counts.
+  function relevant(before, after, log, produced) {
+    const {paths, truncated, missing} = ctx.consulted(), looked = new Set(missing.map(base));
+    for (const match of log.matchAll(/No file ([^\s]+?)\.?$/gm)) looked.add(base(match[1]));
+    for (const path of produced) looked.add(base(path)), paths.add(path);
+    const changed = [];
+    for (const [path, content] of after) {
+      if (before.get(path) === content || TOOL.test(path)) continue;
+      if (truncated || paths.has(path) || (!before.has(path) && looked.has(base(path)))) changed.push(path);
+    }
+    for (const path of before.keys()) if (!after.has(path) && !TOOL.test(path) && (truncated || paths.has(path))) changed.push(path);
+    return changed;
+  }
+  let exit_code = 0, last_log = '', last_stdout = '', passes = 0, bibliographyInput = null, indexInput = null;
+  for (;;) {
+    const before = snapshot(), produced = [];
+    ({ exit_code, log: last_log, stdout: last_stdout } = run(ctx.tex, ctx.fatal));
+    passes++;
+    if (exit_code != 0) break;
+    const bib = ctx.bibliography;
+    if (bib?.kind === 'biber' && exists(bib.bcf)) {
+      const input = text(bib.bcf);
+      if (input !== bibliographyInput) { bibliographyInput = input; exit_code = await bib.run(); produced.push(bib.bbl); if (exit_code != 0) break; }
+    } else if (bib?.kind === 'bibtex') {
+      // BibTeX reads the citation, data and style lines of the .aux (and of included .aux files).
+      const aux = text(bib.aux) || '', input = (aux.match(/^\\(?:citation|bibdata|bibstyle|@input)\{.*$/gm) || []).join('\n');
+      if (input.includes('\\bibdata{') && input !== bibliographyInput) { bibliographyInput = input; ({ exit_code } = run(bib.cmd, ctx.fatal)); produced.push(bib.bbl); if (exit_code != 0) break; }
+    }
+    if (ctx.index && exists(ctx.index.idx)) {
+      const input = text(ctx.index.idx);
+      if (input && input.trim() && input !== indexInput) { indexInput = input; ({ exit_code } = run(ctx.index.cmd, ctx.fatal)); produced.push(ctx.index.ind); if (exit_code != 0) break; }
+    }
+    const changed = relevant(before, snapshot(), last_log || '', produced);
+    if (!changed.length) { print(`$ # no file LuaLaTeX reads changed: pass ${passes} is final`); break; }
+    if (passes >= ctx.maxPasses) { print(`$ # still changing after ${passes} passes (${changed.map(base).slice(0, 4).join(', ')}); keeping the last pass`); break; }
+    print(`$ # rerun: ${changed.map(base).slice(0, 4).join(', ')}${changed.length > 4 ? ', …' : ''} changed`);
+  }
+  // The checks the final pass alone applies: a successful run must have produced pages.
+  if (exit_code == 0 && ctx.all.some(err => (last_stdout + '\n' + last_log).includes(err))) exit_code = 1;
+  return { exit_code, last_log, passes };
+}
+function scribyraHeapBytes(requested) {
+  const PAGE = 65536, MIN = 1024 * PAGE, MAX = 32767 * PAGE;
+  const value = Number(requested);
+  if (!Number.isFinite(value) || value <= 0) return MAX;
+  return Math.min(MAX, Math.max(MIN, Math.floor(value / PAGE) * PAGE));
+}
+function scribyraPatchMemory(head, pages) {
+  if (head.length < 8) return null;
+  if (head[0] !== 0 || head[1] !== 0x61 || head[2] !== 0x73 || head[3] !== 0x6d) throw new Error('Not a WebAssembly module.');
+  const leb = at => { let value = 0, shift = 0, byte; do { if (at >= head.length) return null; byte = head[at++]; value += (byte & 127) * 2 ** shift; shift += 7; } while (byte & 128 && shift < 35); return [value, at]; };
+  const encode = value => { const out = []; do { let byte = value & 127; value = Math.floor(value / 128); if (value) byte |= 128; out.push(byte); } while (value); return out; };
+  let at = 8;
+  for (;;) {
+    if (at >= head.length) return null;
+    const id = head[at], sized = leb(at + 1);
+    if (!sized) return null;
+    const [size, body] = sized;
+    if (id === 5) {
+      if (body + size > head.length) return null;
+      let p = body, count, flags, min, max;
+      [count, p] = leb(p);
+      if (count !== 1) return head;
+      [flags, p] = leb(p); if (flags !== 1) return head;
+      [min, p] = leb(p); [max, p] = leb(p);
+      if (p !== body + size) return head;
+      const section = [1, 1, ...encode(min), ...encode(Math.max(min, pages))];
+      const patched = new Uint8Array(at + 1 + encode(section.length).length + section.length + head.length - (body + size));
+      patched.set(head.subarray(0, at + 1));
+      let out = at + 1;
+      for (const byte of [...encode(section.length), ...section]) patched[out++] = byte;
+      patched.set(head.subarray(body + size), out);
+      return patched;
+    }
+    // Sections are ordered: past the memory section's place means no defined memory.
+    if (id !== 0 && id > 5) return head;
+    at = body + size;
+  }
+}
+async function scribyraWasmWithMemory(response, bytes) {
+  const pages = Math.floor(bytes / 65536), reader = response.body.getReader();
+  let head = new Uint8Array(0), patched = null;
+  while (!(patched = scribyraPatchMemory(head, pages))) {
+    const { value, done } = await reader.read();
+    if (done) throw new Error('The compiler module ended before its memory section.');
+    const next = new Uint8Array(head.length + value.length); next.set(head); next.set(value, head.length); head = next;
+  }
+  const body = new ReadableStream({
+    start(controller) { controller.enqueue(patched); },
+    async pull(controller) { const { value, done } = await reader.read(); if (done) controller.close(); else controller.enqueue(value); },
+    cancel(reason) { return reader.cancel(reason); },
+  });
+  return new Response(body, { status: 200, headers: { 'content-type': 'application/wasm' } });
+}
 // END SCRIBYRA VIRTUAL FS GUARD
 /*
 xdvipdfmx:warning: Color stack underflow. Just ignore.
@@ -386,9 +506,10 @@ class BusytexPipeline {
 
         this.bibtex_resolver = new BusytexBibtexResolver();
         this.data_package_resolver = new BusytexDataPackageResolver(data_packages_js, BusytexPipeline.texmf_system, texmf_local);
+        this.scribyra_heap_max = scribyraHeapBytes(self.scribyraMemoryBytes);
         this.wasm_module_promise = fetch(busytex_wasm).then(response => {
             if (!response.ok) throw new Error(`Failed to fetch WASM module: ${busytex_wasm} (HTTP ${response.status})`);
-            return WebAssembly.compileStreaming ? WebAssembly.compileStreaming(response) : response.arrayBuffer().then(WebAssembly.compile);
+            return WebAssembly.compileStreaming ? scribyraWasmWithMemory(response, this.scribyra_heap_max).then(limited => WebAssembly.compileStreaming(limited)) : response.arrayBuffer().then(bytes => WebAssembly.compile(scribyraPatchMemory(new Uint8Array(bytes), this.scribyra_heap_max / 65536)));
         });
         this.mem_header_size = 2 ** 26;
 
@@ -456,6 +577,7 @@ class BusytexPipeline {
             thisProgram: this.bin_busytex,
             scribyraObserve: (...args) => this.scribyraObserve?.(...args),
             noInitialRun: true,
+            scribyraHeapMax: this.scribyra_heap_max,
             totalDependencies: 0,
             prefix: '',
             preRuns: [],
@@ -611,7 +733,7 @@ class BusytexPipeline {
             exit_code: effective_exit_code
         });
 
-        return { exit_code: effective_exit_code, log };
+        return { exit_code: effective_exit_code, log, stdout };
     }
 
     async read_project_files(dir = null) {
@@ -635,6 +757,19 @@ class BusytexPipeline {
         if (FS.analyzePath(root).exists)
             walk(root);
         return results;
+    }
+
+    async scribyra_present(names) {
+        const Module = await this.Module;
+        if (!Module) throw new Error('Module not initialized');
+        const { FS } = Module, collect = (dir, into) => {
+            if (!FS.analyzePath(dir).exists) return into;
+            for (const name of FS.readdir(dir)) { if (name === '.' || name === '..') continue; const path = dir + '/' + name; if (FS.isDir(FS.stat(path).mode)) collect(path, into); else into.add(name); }
+            return into;
+        };
+        this.scribyra_bundled ||= collect('/texlive', new Set());
+        const installed = collect('/texmf-downloads', new Set());
+        return names.map(name => { const base = String(name).split('/').pop(); return this.scribyra_bundled.has(base) || installed.has(base); });
     }
 
     async write_texlive_remote_files(files) {
@@ -753,60 +888,18 @@ class BusytexPipeline {
         const run = (cmd, error_messages) =>
             this._run_cmd(Module, FS, cmd, error_messages, verbose, log_path, blg_path, aux_path, bbl_path, mem_header, logs);
 
+        // SCRIBYRA PASSES: rerun only while a file LuaLaTeX reads changed (scripts/tex-passes.mjs).
         let exit_code = 0;
         let last_log = '';
-
-        ({ exit_code, log: last_log } = run(initial, this.error_messages_fatal));
-
-        if (exit_code == 0 && bibtex) {
-            if (bib_backend == 'biber' && this.biber != null)
-                exit_code = await this._run_biber(FS, tex_path, files, verbose_args_for('biber'), logs);
-            else
-                ({ exit_code } = run(bibtex8_cmd, this.error_messages_fatal));
-
-            if (exit_code == 0 && this.read_all_text(FS, bbl_path).trim() == '') {
-                this.print('$ # bibtex found no citation commands, skipping extra passes');
-                bibtex = false;
-            }
-        }
-
-        const makeindex_enabled = makeindex === null ? true : makeindex;
-        let makeindex_active = makeindex_enabled && exit_code == 0 && FS.analyzePath(idx_path).exists && this.read_all_text(FS, idx_path).trim() != '';
-        if (makeindex_active) {
-            ({ exit_code } = run(makeindex_cmd, this.error_messages_fatal));
-            if (exit_code == 0 && this.read_all_text(FS, ind_path).trim() == '') {
-                this.print('$ # makeindex produced no index entries, skipping extra passes');
-                makeindex_active = false;
-            }
-        } else if (makeindex === false) {
-            this.print('$ # makeindex disabled by caller');
-        }
-
         const rerun_enabled = rerun === null ? true : rerun;
-        if (exit_code == 0) {
-            if (rerun_enabled) {
-                for (let pass = 0; pass < this.max_tex_passes; pass++) {
-                    const is_last_pass = pass === this.max_tex_passes - 1;
-                    const cmd = is_last_pass ? final_cmd : nonfinal;
-                    const error_messages = is_last_pass ? this.error_messages_all : this.error_messages_fatal;
-
-                    ({ exit_code, log: last_log } = run(cmd, error_messages));
-
-                    if (exit_code != 0)
-                        break;
-
-                    if (!this._needs_rerun(last_log)) {
-                        if (cmd !== final_cmd) {
-                            ({ exit_code, log: last_log } = run(final_cmd, this.error_messages_all));
-                        }
-                        break;
-                    }
-                }
-            } else {
-                this.print('$ # rerun disabled by caller, running final pass only');
-                // ({ exit_code, log: last_log } = run(final_cmd, this.error_messages_all));
-            }
-        }
+        const scribyra_inputs = new Set(files.filter(f => f.contents != null).map(f => PATH.join(this.project_dir, f.path)));
+        const scribyra_bibliography = !bibtex ? null : bib_backend == 'biber' && this.biber != null
+            ? { kind: 'biber', bcf: tex_path.replace(/\.tex$/i, '.bcf'), bbl: PATH.join(source_dir, bbl_path), run: () => this._run_biber(FS, tex_path, files, verbose_args_for('biber'), logs) }
+            : { kind: 'bibtex', aux: aux_path, bbl: PATH.join(source_dir, bbl_path), cmd: bibtex8_cmd };
+        const scribyra_index = (makeindex === null ? true : makeindex) ? { idx: idx_path, ind: PATH.join(source_dir, ind_path), cmd: makeindex_cmd } : null;
+        ({ exit_code, last_log } = await scribyraTexPasses({ FS, projectDir: this.project_dir, inputs: scribyra_inputs, run, tex: final_cmd, fatal: this.error_messages_fatal, all: this.error_messages_all, bibliography: scribyra_bibliography, index: scribyra_index,
+            consulted: () => ({ paths: new Set(Module.scribyraInputs || []), truncated: !Module.scribyraInputs || !!Module.scribyraInputsTruncated, missing: [...Module.scribyraMissing.values()].map(entry => String(entry.name)) }),
+            maxPasses: rerun_enabled ? this.max_tex_passes + 2 : 1, print: this.print }));
 
         if (exit_code == 0 && dvi) {
             ({ exit_code } = run(dvi, this.error_messages_all));
@@ -827,7 +920,7 @@ class BusytexPipeline {
 
         this.Module = this.preload == false ? null : this.Module;
 
-        return { pdf: pdf, synctex: synctex, log: logcat, exit_code: exit_code, logs: logs, missing: Array.from(Module.scribyraMissing.values()), recorder: Array.from(Module.scribyraInputs||[]).map(path=>'INPUT '+path).join('\n').slice(0, 256*1024), recorderTruncated: !!Module.scribyraInputsTruncated || Array.from(Module.scribyraInputs||[]).reduce((sum,path)=>sum+path.length+7,0)>256*1024 };
+        return { pdf: pdf, synctex: synctex, log: logcat, exit_code: exit_code, logs: logs, missing: Array.from(Module.scribyraMissing.values()), memory: Module.HEAPU8.length, recorder: Array.from(Module.scribyraInputs||[]).map(path=>'INPUT '+path).join('\n').slice(0, 256*1024), recorderTruncated: !!Module.scribyraInputsTruncated || Array.from(Module.scribyraInputs||[]).reduce((sum,path)=>sum+path.length+7,0)>256*1024 };
     }
 }
 

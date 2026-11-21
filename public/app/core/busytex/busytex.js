@@ -6385,7 +6385,7 @@ changes have the same license
       // full 4GB Wasm memories, the size will wrap back to 0 bytes in Wasm side
       // for any code that deals with heap sizes, which would require special
       // casing all heap size related code to treat 0 specially.
-      603979776;
+      (Module['scribyraHeapMax'] || 603979776);
   var _emscripten_get_heap_max = () => getHeapMax();
 
 

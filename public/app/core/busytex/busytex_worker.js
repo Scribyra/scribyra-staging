@@ -98,11 +98,12 @@ importScripts('busytex_pipeline.js');
 
 self.pipeline = null;
 
-onmessage = async ({ data: { files, main_tex_path, bibtex, biber, makeindex, rerun, busytex_wasm, busytex_js, biber_js, biber_wasm, biber_data, preload_data_packages_js, data_packages_js, texmf_local, preload, verbose, driver, remote_endpoint, shell_escape, load_shell_handler_script, read_project_files, write_texlive_remote_files, write_texlive_remote_misses, scribyra_telemetry } }) => {
+onmessage = async ({ data: { files, main_tex_path, bibtex, biber, makeindex, rerun, busytex_wasm, busytex_js, biber_js, biber_wasm, biber_data, preload_data_packages_js, data_packages_js, texmf_local, preload, verbose, driver, remote_endpoint, shell_escape, load_shell_handler_script, read_project_files, write_texlive_remote_files, write_texlive_remote_misses, scribyra_telemetry, scribyra_memory, scribyra_probe } }) => {
     // TODO: cache data packages from here? https://developer.mozilla.org/en-US/docs/Web/API/Cache
 
     if (busytex_wasm && busytex_js && preload_data_packages_js) {
         try {
+            self.scribyraMemoryBytes = scribyra_memory;
             self.pipeline = workerInitializeObservation((scribyra_ready, scribyra_observe) => new BusytexPipeline(busytex_js, busytex_wasm, data_packages_js, preload_data_packages_js, texmf_local, msg => postMessage({ print: msg }), scribyra_ready, preload, BusytexPipeline.ScriptLoaderWorker, biber_js, biber_wasm, biber_data, scribyra_observe), scribyra_telemetry);
         }
         catch (err) {
@@ -126,6 +127,14 @@ onmessage = async ({ data: { files, main_tex_path, bibtex, biber, makeindex, rer
         }
         catch (err) {
             postMessage({ exception: 'Exception reading project files: ' + err.toString() + '\nStack:\n' + err.stack });
+        }
+    }
+    else if (scribyra_probe && self.pipeline) {
+        try {
+            postMessage({ scribyra_present: await self.pipeline.scribyra_present(scribyra_probe) });
+        }
+        catch (err) {
+            postMessage({ exception: 'Exception probing TeX files: ' + err.toString() + '\nStack:\n' + err.stack });
         }
     }
     else if (write_texlive_remote_files && self.pipeline) {

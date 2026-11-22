@@ -247,8 +247,8 @@ globalThis.createScribyraDownloads = function(policy,observer){
 
 const downloads=globalThis.createScribyraDownloads({"defaults":{"version":1,"archiveBytes":134217728,"metadataBytes":33554432,"runtimeBytes":268435456,"partialBytes":134217728},"maximum":{"version":1,"archiveBytes":2147483648,"metadataBytes":268435456,"runtimeBytes":2147483648,"partialBytes":536870912},"mib":1048576}
 );
-const CACHE='scribyra-shell-33d3bd7a7aa6';
-const PRECACHE=["/app/","/app/index.html","/app/agent.md","/app/assets/pdf.worker.min-CHFwMXne.mjs","/app/assets/com.scribyra.zotero-1.0.0.scribyra-plugin-DeP98mhw.json","/app/assets/cursor-editorTextHighlight-kG3uUOwL.svg","/app/assets/scribyra_app_bg-wXrF2Ff3.wasm","/app/assets/index-WEn0iSi9.css","/app/assets/comments-BlMehZhV.css","/app/assets/index-BwEzdgXF.js","/app/assets/plugin-catalog-B8HLxdla.js","/app/assets/plugin-registry-CeZC07zB.js","/app/assets/latex-completion-data-DvNg1Y3w.js","/app/assets/latex-packages-A4aN6F5t.js","/app/assets/index-B4mo8Wq-.js","/app/assets/workspace-worker-CyjC4RdU.js","/app/assets/tex-packages-worker-CCjG8QVD.js"];
+const CACHE='scribyra-shell-e33b035e9b2e';
+const PRECACHE=["/app/","/app/index.html","/app/agent.md","/app/assets/com.scribyra.github-gitlab-1.0.0.scribyra-plugin-BeLtRLiA.json","/app/assets/com.scribyra.zotero-1.0.0.scribyra-plugin-DeP98mhw.json","/app/assets/pdf.worker.min-CHFwMXne.mjs","/app/assets/cursor-editorTextHighlight-kG3uUOwL.svg","/app/assets/scribyra_app_bg-BWagTjVX.wasm","/app/assets/index-DEBO9Ns4.css","/app/assets/comments-BlMehZhV.css","/app/assets/index-esLUE7OZ.js","/app/assets/plugin-catalog-C7JWx6_V.js","/app/assets/plugin-registry-Nvmeb-NO.js","/app/assets/latex-completion-data-DvNg1Y3w.js","/app/assets/latex-packages-A4aN6F5t.js","/app/assets/index-B4mo8Wq-.js","/app/assets/workspace-worker-BX9FHoHg.js","/app/assets/tex-packages-worker-Dzp-dJpp.js"];
 const SHELL="/app/";
 const ENGINE='scribyra-tex-v1.4.1';
 const VERIFIED='scribyra-runtime-verified-v1';

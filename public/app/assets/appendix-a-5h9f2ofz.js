@@ -1,0 +1,6 @@
+const e=`% Appendices are lettered (A, B, ...) because main.tex calls \\appendix first.
+\\chapter{Supplementary material}
+\\label{app:supplementary}
+
+Long derivations, questionnaires, extra tables or code listings.
+`;export{e as default};

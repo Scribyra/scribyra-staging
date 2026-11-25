@@ -1,0 +1,9 @@
+const n=`\\chapter{Conclusion}
+\\label{ch:conclusion}
+
+\\section{Summary}
+Answer each research question from \\cref{ch:introduction} in turn.
+
+\\section{Limitations and future work}
+Be honest about what the thesis does not show, and suggest what could follow.
+`;export{n as default};

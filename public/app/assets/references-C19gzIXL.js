@@ -1,0 +1,8 @@
+const e=`@book{halliday2013,
+  author    = {Halliday, David and Resnick, Robert and Walker, Jearl},
+  title     = {Fundamentals of Physics},
+  edition   = {10},
+  publisher = {Wiley},
+  year      = {2013}
+}
+`;export{e as default};

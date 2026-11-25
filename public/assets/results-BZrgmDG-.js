@@ -1,0 +1,20 @@
+const n=`\\chapter{Results}
+\\label{ch:results}
+
+Present what you found, without interpreting it yet. \\Cref{tab:results}
+is an example.
+
+\\begin{table}[htbp]
+  \\centering
+  \\caption{Main results.}
+  \\label{tab:results}
+  \\begin{tabular}{lcc}
+    \\toprule
+    Condition & Accuracy (\\%) & Time (s) \\\\
+    \\midrule
+    Baseline  & 71.2 & 3.4 \\\\
+    Proposed  & 78.9 & 3.1 \\\\
+    \\bottomrule
+  \\end{tabular}
+\\end{table}
+`;export{n as default};

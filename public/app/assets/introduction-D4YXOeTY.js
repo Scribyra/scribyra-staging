@@ -1,0 +1,18 @@
+const e=`% Chapter 1. Every chapter file starts with \\chapter and a \\label.
+\\chapter{Introduction}
+\\label{ch:introduction}
+
+\\section{Motivation}
+Why does this question matter, and to whom?
+
+\\section{Research questions}
+\\begin{enumerate}
+  \\item The first question this thesis answers.
+  \\item The second question.
+\\end{enumerate}
+
+\\section{Contributions and outline}
+\\Cref{ch:background} reviews earlier work, \\cref{ch:method} describes the
+method, \\cref{ch:results} presents the results and \\cref{ch:conclusion}
+concludes.
+`;export{e as default};
